@@ -2,6 +2,9 @@ package main
 
 import (
 	"bytes"
+	"fmt"
+	"log"
+	"net"
 	"syscall"
 )
 
@@ -18,14 +21,19 @@ func main() {
 	// Create the server's socket
 	fd, err := syscall.Socket(syscall.AF_INET, syscall.SOCK_DGRAM, PROTOCOL)
 	if err != nil {
-		panic(err)
+		log.Fatalf("creating socket: %s", err)
 	}
 
 	// Bind the socket to an IPv4 address and a port through which to listen to
-	syscall.Bind(fd, &syscall.SockaddrInet4{
+	err = syscall.Bind(fd, &syscall.SockaddrInet4{
 		Port: SERVER_PORT,
 		Addr: serverAddress,
 	})
+	if err != nil {
+		log.Fatalf("binding socket: %s\n", err)
+	} else {
+		fmt.Printf("receiving incoming packets in %s:%d\n", net.IP(serverAddress[:]).String(), SERVER_PORT)
+	}
 
 	defer syscall.Close(fd)
 	for {
@@ -33,14 +41,15 @@ func main() {
 		b := make([]byte, 1024)
 		n, from, err := syscall.Recvfrom(fd, b, 0)
 		if err != nil {
-			return
+			log.Fatalf("reading data from client: %s\n", err)
 		}
 		if from != nil {
 			// Uppercase all characters and send the resulting []byte to the client
 			err = syscall.Sendto(fd, bytes.ToUpper(b[:n]), 0, from)
 			if err != nil {
-				return
+				log.Fatalf("sending data to client: %s\n", err)
 			}
+			fmt.Printf("received %b, sent %b", b[:n], bytes.ToUpper(b[:n]))
 		}
 	}
 }
