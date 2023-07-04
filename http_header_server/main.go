@@ -7,8 +7,6 @@ import (
 	"syscall"
 )
 
-type killCommand int
-
 const (
 	PROTOCOL    = 0
 	SERVER_PORT = 8080
@@ -46,11 +44,14 @@ func main() {
 			log.Fatalf("accepting connection: %s\n", err)
 		}
 		fmt.Println("connection established")
+
+		// Handle each accepted connection concurrently
 		go handleConnection(nfd)
 	}
 }
 
 func handleConnection(fd int) {
+	// Close the connection when the function returns
 	defer syscall.Close(fd)
 	for {
 		// Instantiate a 1024 byte slice and copy incoming data into the slice
@@ -59,7 +60,8 @@ func handleConnection(fd int) {
 		if err != nil {
 			log.Fatalf("receiving data from client: %s\n", err)
 		}
-		fmt.Println(b[:n])
+
+		// Return and close connection if data is the string "exit" or SIGINT
 		if bytes.Equal(bytes.ToLower(b[:n-2]), []byte("exit")) || bytes.Equal((b[:n]), sigint) {
 			fmt.Println("closing connection")
 			return

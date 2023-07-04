@@ -49,7 +49,6 @@ func main() {
 			if err != nil {
 				log.Fatalf("sending data to client: %s\n", err)
 			}
-			fmt.Printf("received %b, sent %b", b[:n], bytes.ToUpper(b[:n]))
 		}
 	}
 }
